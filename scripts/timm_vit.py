@@ -17,6 +17,7 @@ from timm.models.helpers import build_model_with_cfg, overlay_external_default_c
 from timm.models.vision_transformer import checkpoint_filter_fn
 from timm.models.layers import PatchEmbed, Mlp, DropPath, trunc_normal_, lecun_normal_
 import helper
+from patchdropout import PatchDropout
 
 _logger = logging.getLogger(__name__)
 
@@ -91,43 +92,6 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
             trunc_normal_(self.cls_token, std=.02)
             self.apply(_init_vit_weights)
 
-    def random_masking(self, rank, x, keep_rate):
-        """
-        Perform per-sample random masking by per-sample shuffling.
-        Per-sample shuffling is done by argsort random noise.
-        x: [N, L, D], sequence
-
-        Returns:
-            x_masked: masked representations
-            mask: [N, L], 0 is keep, 1 is remove, already unshuffled
-            ids_restore: ids used to unshuffle
-        """
-        device = torch.device("cuda:{}".format(rank))
-        N, L, D = x.shape  # batch, length, dim
-        noise = torch.rand(N, L, device=device)  # noise in [0, 1]
-
-        if torch.is_tensor(keep_rate):
-            keep_rate = keep_rate.item()
-        len_keep = int(L * keep_rate)
-
-        # Sort noise for each sample
-        ids_shuffle = torch.argsort(noise, dim=1)  # ascend: small is keep, large is remove
-        ids_restore = torch.argsort(ids_shuffle, dim=1)
-
-        # Keep the first subset
-        ids_keep = ids_shuffle[:, :len_keep]
-
-        x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, D))
-
-        # Generate the binary mask: 0 is keep, 1 is remove
-        mask = torch.ones([N, L], device=device)
-        mask[:, :len_keep] = 0
-
-        # Un-shuffle to get the binary mask
-        mask = torch.gather(mask, dim=1, index=ids_restore)
-
-        return x_masked, mask, ids_restore
-
     def patchify(self, imgs):
         """
         imgs: (N, 3, H, W)
@@ -156,28 +120,20 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         imgs = x.reshape(shape=(x.shape[0], 3, h * p, h * p))
         return imgs
 
-    def get_masked_features(self, rank, patch_embeddings, keep_rate, cls_token):
-        masked_patch_embeddings, mask, ids_restore = self.random_masking(rank, patch_embeddings, keep_rate)
-        x = torch.cat((cls_token, masked_patch_embeddings), dim=1)
-        return x, mask, ids_restore
-
-    def get_complete_features(self, patch_embeddings, cls_token):
-        x = torch.cat((cls_token, patch_embeddings), dim=1)
-        return x, None, None
-
     def forward_features(self, rank, x, keep_rate):
         N = x.size()[0]  # batch, length, dim
 
         # Get patch embeddings without cls tokens
         patch_embeddings = self.patch_embed(x) + self.pos_embed[:, self.num_tokens:, :]
         
-        # Prepare cls tokens for later
+        # Prepare cls token
         cls_token = self.cls_token.expand(N, -1, -1) + self.pos_embed[:, :1, :]  # cls_tokens impl from Phil Wang
 
-        if keep_rate != 1:  # If we sample
-            x, mask, ids_restore = self.get_masked_features(rank, patch_embeddings, keep_rate, cls_token)
-        elif keep_rate == 1:  # 100% tokens or inference
-            x, mask, ids_restore = self.get_complete_features(patch_embeddings, cls_token)
+        # cat CLS token
+        x = torch.cat((cls_token, masked_patch_embeddings), dim=1)
+        
+        # PatchDropout
+        x = self.PatchDropout(keep_rate)(x, force_drop=True)
 
         x = self.pos_drop(x)  # always drop (if planned) before blocks
         x = self.blocks(x)
