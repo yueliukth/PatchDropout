@@ -19,6 +19,11 @@ Vision transformers have demonstrated the potential to outperform CNNs in a vari
 }
 ```
 
+## PatchDropout is easy to implement
+To implement PatchDropout you can use [our implementation](https://github.com/yueliukth/PatchDropout/blob/Module_PatchDropout/scripts/patchdropout.py) and add it to your codebase using a single line of code.
+
+All you have to do is to call ```PatchDropout(keep_rate)``` before the transformer blocks (assuming you have added the positional embeddings and the CLS token)
+
 ## Setting up Docker environment 
 Go to folder ```docker/```.
 ```

@@ -133,7 +133,7 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         x = torch.cat((cls_token, masked_patch_embeddings), dim=1)
         
         # PatchDropout
-        x = self.PatchDropout(keep_rate)(x, force_drop=True)
+        x = PatchDropout(keep_rate)(x, force_drop=True)
 
         x = self.pos_drop(x)  # always drop (if planned) before blocks
         x = self.blocks(x)
