@@ -19,6 +19,11 @@ Vision transformers have demonstrated the potential to outperform CNNs in a vari
 }
 ```
 
+## PatchDropout is easy to implement
+To implement PatchDropout you can use [our implementation](https://github.com/yueliukth/PatchDropout/blob/Module_PatchDropout/scripts/patchdropout.py) and add it to your codebase using a single line of code.
+
+All you have to do is to call ```PatchDropout(keep_rate)``` before the transformer blocks (assuming you have added the positional embeddings).
+
 ## Setting up Docker environment 
 Go to folder ```docker/```.
 ```
@@ -80,6 +85,6 @@ Edit the json file in ```scripts/yaml/train_yaml/```
     * "input_type": 
       * "name": "AllTokens" if PatchDropout is not applied, otherwise, "SampledTokens"
       * "SampledTokens":
-        * "keep_rate": keep rate in PatchDropout; for DeiT models, keep_rate is a float number between [0,1]; for Swin models, keep_rate here takes an integer representing the number of tokens left within a window, e.g., 1,2,...,6
+        * "keep_rate": keep rate in PatchDropout; for DeiT models, keep_rate is a float number between [0,1]; for Swin models, keep_rate represents the percentage of tokens left along 1 dimension within a window, e.g., when window size is 7, keep rate can be selected from the following: 1/7, 2/7,..., 6/7, 1
       
 

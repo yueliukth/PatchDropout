@@ -28,8 +28,5 @@
                                  "clip_grad": 1,
                                  "label_smoothing": 0.1,
                                  "input_type": { "name": "SampledTokens", # "AllTokens" or "SampledTokens"
-                                                 "SampledTokens": { "keep_rate": '0.5' } },}, }, #
-  # for swin models, keep_rate takes an integer representing the number of tokens left within a window, e.g., 1,2,...,6
-  # for deit models, keep_rate is a float number between [0,1]
-
+                                                 "SampledTokens": { "keep_rate": 0.5 } },}, },
 }
