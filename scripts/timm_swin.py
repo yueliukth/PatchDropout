@@ -18,7 +18,6 @@ from timm.models.layers import PatchEmbed, Mlp, DropPath, to_2tuple, trunc_norma
 
 import helper
 
-
 def _cfg(url='', **kwargs):
     return {
         'url': url,
@@ -423,7 +422,7 @@ class SwinTransformer(timm.models.swin_transformer.SwinTransformer):
             ]
         self.layers = nn.Sequential(*layers)
 
-    def random_masking(self, rank, x, keep_rate, batch_size):
+    def random_masking(self, rank, x, window_size_after_masking, batch_size):
         """
         Perform per-sample random masking by per-sample shuffling.
         Per-sample shuffling is done by argsort random noise.
@@ -435,12 +434,6 @@ class SwinTransformer(timm.models.swin_transformer.SwinTransformer):
             ids_keep: ids used to sample tokens
         """
         device = torch.device("cuda:{}".format(rank))
-
-        if torch.is_tensor(keep_rate):
-            keep_rate = keep_rate.item()
-        if isinstance(keep_rate, (int, float)):
-            window_size_after_masking = int(keep_rate)
-
         N, L, D = x.shape  # batch, length, dim
 
         indices = torch.range(0, self.window_size*self.window_size-1, device=device).view(-1, self.window_size, self.window_size).repeat(batch_size, 1, 1)  # B, 7, 7
@@ -488,12 +481,8 @@ class SwinTransformer(timm.models.swin_transformer.SwinTransformer):
         x_windows = window_partition(x, self.window_size)  # 64*B, 7, 7, 128
         x_windows = x_windows.view(-1, self.window_size * self.window_size, C)  # 64*B, 49, 128
 
-        x_windows, mask, ids_keep = self.random_masking(rank, x_windows, keep_rate, batch_size=B)
-
-        if torch.is_tensor(keep_rate):
-            keep_rate = keep_rate.item()
-        if isinstance(keep_rate, (int, float)):
-            window_size_after_masking = int(keep_rate)
+        window_size_after_masking = int(keep_rate*self.window_size)
+        x_windows, mask, ids_keep = self.random_masking(rank, x_windows, window_size_after_masking, batch_size=B)
 
         H = W = int(math.sqrt(x_windows.size()[0]/B))*window_size_after_masking
         x = window_reverse(x_windows, window_size_after_masking, H, W)  # B, 8n, 8n, C

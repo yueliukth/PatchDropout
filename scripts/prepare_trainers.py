@@ -45,7 +45,6 @@ def train_for_image_one_epoch(rank, epoch, num_epochs,
             x = model(rank, images, keep_rate)  # x: logits right after the fc layer
             loss = defined_loss['classification_loss'](x, labels)
 
-
         if not math.isfinite(loss.item()):
             print("Loss is {}, stopping training".format(loss.item()), force=True)
             sys.exit(1)
