@@ -4,8 +4,8 @@
 This is a PyTorch implementation of the paper [PatchDropout: Economizing Vision Transformers Using Patch Dropout](https://arxiv.org/abs/2208.07220).
 
 <p float="left">
-  <img src="images/figure4.jpg" width="510" />
   <img src="images/figure1.jpg" width="300" />
+  <img src="images/figure4.jpg" width="500" />
 </p>
 
 Vision transformers have demonstrated the potential to outperform CNNs in a variety of vision tasks. But the computational and memory requirements of these models prohibit their use in many applications, especially those that depend on high-resolution images, such as medical image classification. Efforts to train ViTs more efficiently are overly complicated, necessitating architectural changes or intricate training schemes. In this work, we show that standard ViT models can be efficiently trained at high resolution by randomly dropping input image patches. This simple approach, PatchDropout, reduces FLOPs and memory by at least 50% in standard natural image datasets such as ImageNet, and those savings only increase with image size. On CSAW, a high-resolution medical dataset, we observe a 5 times savings in computation and memory using PatchDropout, along with a boost in performance. For practitioners with a fixed computational or memory budget, PatchDropout makes it possible to choose image resolution, hyperparameters, or model size to get the most performance out of their model.
