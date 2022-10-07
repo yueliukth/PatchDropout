@@ -124,15 +124,16 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         N = x.size()[0]  # batch, length, dim
 
         # Get patch embeddings without cls tokens
-        x = self.patch_embed(x) + self.pos_embed[:, self.num_tokens:, :]
-        # PatchDropout
-        x = PatchDropout(keep_rate)(x)
-
+        patch_embeddings = self.patch_embed(x) + self.pos_embed[:, self.num_tokens:, :]
+        
         # Prepare cls token
         cls_token = self.cls_token.expand(N, -1, -1) + self.pos_embed[:, :1, :]  # cls_tokens impl from Phil Wang
 
         # cat CLS token
-        x = torch.cat((cls_token, x), dim=1)
+        x = torch.cat((cls_token, patch_embeddings), dim=1)
+        
+        # PatchDropout
+        x = PatchDropout(keep_rate)(x, force_drop=True)
 
         x = self.pos_drop(x)  # always drop (if planned) before blocks
         x = self.blocks(x)
@@ -145,7 +146,6 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         x = self.head(x)
 
         return x
-
 
 def _init_vit_weights(module: nn.Module, name: str = '', head_bias: float = 0., jax_impl: bool = False):
     """ ViT weight initialization
