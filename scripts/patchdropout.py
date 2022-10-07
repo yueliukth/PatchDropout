@@ -4,7 +4,7 @@ class PatchDropout(torch.nn.Module):
     """ 
     Implements PatchDropout: https://arxiv.org/abs/2208.07220
     """
-    def __init__(self, keep_rate=0.5, sampling="uniform", token_shuffling=True):
+    def __init__(self, keep_rate=0.5, sampling="uniform", token_shuffling=False):
         super().__init__()
         assert 0 < keep_rate <=1, "The keep_rate must be in (0,1]"
         
