@@ -4,12 +4,13 @@ class PatchDropout(torch.nn.Module):
     """ 
     Implements PatchDropout: https://arxiv.org/abs/2208.07220
     """
-    def __init__(self, keep_rate=0.5, sampling="uniform"):
+    def __init__(self, keep_rate=0.5, sampling="uniform", token_shuffling=True):
         super().__init__()
         assert 0 < keep_rate <=1, "The keep_rate must be in (0,1]"
         
         self.keep_rate = keep_rate
         self.sampling = sampling
+        self.token_shuffling = token_shuffling
 
     def forward(self, x, force_drop=False):
         """
@@ -48,5 +49,8 @@ class PatchDropout(torch.nn.Module):
         
         keep = int(_L * self.keep_rate)
         patch_mask = torch.rand(N, _L, device=x.device)
-        patch_mask = torch.argsort(patch_mask, dim=1) + 1     
-        return patch_mask[:, :keep]
+        patch_mask = torch.argsort(patch_mask, dim=1) + 1  
+        patch_mask[:, :keep]
+        if not self.token_shuffling:
+            patch_mask = patch_mask.sort(1)[0]
+        return patch_mask
