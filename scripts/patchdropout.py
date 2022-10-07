@@ -49,8 +49,8 @@ class PatchDropout(torch.nn.Module):
         
         keep = int(_L * self.keep_rate)
         patch_mask = torch.rand(N, _L, device=x.device)
-        patch_mask = torch.argsort(patch_mask, dim=1) + 1  
-        patch_mask[:, :keep]
+        patch_mask = torch.argsort(patch_mask, dim=1) + 1
+        patch_mask = patch_mask[:, :keep]
         if not self.token_shuffling:
             patch_mask = patch_mask.sort(1)[0]
         return patch_mask
