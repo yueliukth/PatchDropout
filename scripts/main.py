@@ -239,6 +239,7 @@ def train_process(rank, train_dataloader, val_dataloader, model, loss, optimizer
             keep_rate = float(keep_rate)
     else:
         keep_rate = 1
+    random_keep_rate = training_params[mode]['input_type']['SampledTokens']['random_keep_rate']
 
     # # ============ Optionally resume training ... ============
     to_restore = {'epoch': 0}
@@ -262,20 +263,20 @@ def train_process(rank, train_dataloader, val_dataloader, model, loss, optimizer
         _ = prepare_trainers.train_for_image_one_epoch( rank, epoch, training_params[mode]['num_epochs'],
                                                         model, loss, train_dataloader,
                                                         optimizer, lr_schedule, training_params[mode]['clip_grad'],
-                                                        keep_rate=keep_rate,
+                                                        keep_rate=keep_rate, random_keep_rate=random_keep_rate,
                                                         accum_iter=trainloader_params['accum_iter'])
 
         # ============ Evaluating the classification performance ... ============
         if dataset_params['dataset_name'] != 'CSAW':
             if (epoch + 1) % training_params[mode]['val_freq'] == 0 or (epoch + 1) == training_params[mode]['num_epochs']:
-                val_loss, acc1, acc5 = evaluation.public_validate_network(rank, val_dataloader, model, dataset_params, keep_rate=1)
+                val_loss, acc1, acc5 = evaluation.public_validate_network(rank, val_dataloader, model, dataset_params, keep_rate=1, random_keep_rate=False)
                 if rank == 0:
                     print(f"Val Loss at epoch {epoch+1} of the network on the validation set: {val_loss}")
                     print(f"Top1 accuracy at epoch {epoch+1} of the network on the validation set: {acc1}")
                     print(f"Top5 accuracy at epoch {epoch+1} of the network on the validation set: {acc5}")
         else:
             if (epoch + 1) % training_params[mode]['val_freq'] == 0 or (epoch + 1) == training_params[mode]['num_epochs']:
-                val_loss, img_auc, avg_auc, max_auc, min_auc = evaluation.csaw_validate_for_image_network(rank, val_dataloader, model, keep_rate=1)
+                val_loss, img_auc, avg_auc, max_auc, min_auc = evaluation.csaw_validate_for_image_network(rank, val_dataloader, model, keep_rate=1, random_keep_rate=False)
                 if rank == 0:
                     print(f"Val Loss at epoch {epoch+1} of the network on the validation set: {val_loss}")
                     print(f"Image AUC at epoch {epoch+1} of the network on the validation set: {img_auc}")

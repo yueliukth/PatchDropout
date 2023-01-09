@@ -14,7 +14,7 @@ from helper import accuracy
 import helper
 
 @torch.no_grad()
-def public_validate_network(rank, val_dataloader, model, dataset_params, keep_rate):
+def public_validate_network(rank, val_dataloader, model, dataset_params, keep_rate, random_keep_rate=False):
     device = torch.device("cuda:{}".format(rank))
     model.eval()
     metric_logger = helper.MetricLogger(delimiter="  ")
@@ -39,7 +39,7 @@ def public_validate_network(rank, val_dataloader, model, dataset_params, keep_ra
 
         # Forward
         with torch.no_grad():
-            output = model(rank, images, keep_rate)
+            output = model(rank, images, keep_rate, random_keep_rate)
             if isinstance(output, list):
                 for index in range(len(output)):
                     output[index] = torch.nn.functional.log_softmax(output[index], dim=1)

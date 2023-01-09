@@ -120,7 +120,7 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         imgs = x.reshape(shape=(x.shape[0], 3, h * p, h * p))
         return imgs
 
-    def forward_features(self, rank, x, keep_rate):
+    def forward_features(self, x, keep_rate, random_keep_rate):
         N = x.size()[0]  # batch, length, dim
 
         # Get patch embeddings without cls tokens
@@ -129,19 +129,29 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         # Prepare cls token
         cls_token = self.cls_token.expand(N, -1, -1) + self.pos_embed[:, :1, :]  # cls_tokens impl from Phil Wang
 
-        # cat CLS token
+        # Cat CLS token
         x = torch.cat((cls_token, patch_embeddings), dim=1)
-        
+
+        # Random keep rate if random_keep_rate is True
+        if random_keep_rate:
+            start_mask_ratio = 0.0
+            end_mask_ratio = 0.5
+            if random.random() < 0.5:
+                random_mask_ratio = random.randint(int(start_mask_ratio*20), int(end_mask_ratio*20))/20
+                keep_rate = 1 - random_mask_ratio
+            else:
+                keep_rate = 1
+
         # PatchDropout
         x = PatchDropout(keep_rate)(x, force_drop=True)
-
+        
         x = self.pos_drop(x)  # always drop (if planned) before blocks
         x = self.blocks(x)
         x = self.norm(x)
         return x
 
-    def forward(self, rank, x, keep_rate):
-        x = self.forward_features(rank, x, keep_rate)
+    def forward(self, rank, x, keep_rate, random_keep_rate):
+        x = self.forward_features(x, keep_rate, random_keep_rate)
         x = self.pre_logits(x[:, 0])
         x = self.head(x)
 

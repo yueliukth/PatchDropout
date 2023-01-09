@@ -494,7 +494,9 @@ class SwinTransformer(timm.models.swin_transformer.SwinTransformer):
         x = torch.flatten(x, 1)  # B, 1024
         return x
 
-    def forward(self, rank, x, keep_rate):
+    def forward(self, rank, x, keep_rate, dynamic_keep_rate):
+        if dynamic_keep_rate:
+            raise NotImplementedError(f"dynamic_keep_rate has not been implemented with SWINs")
         x = self.forward_features(rank, x, keep_rate)
         x = self.head(x)  # B, num_classes
         return x

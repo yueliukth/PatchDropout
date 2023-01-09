@@ -16,7 +16,7 @@ import helper
 def train_for_image_one_epoch(rank, epoch, num_epochs,
                               model, defined_loss, data_loader,
                               optimizer, lr_schedule, clip_grad,
-                              keep_rate=1, accum_iter=1):
+                              keep_rate=1, random_keep_rate=False, accum_iter=1):
     device = torch.device("cuda:{}".format(rank))
     metric_logger = helper.MetricLogger(delimiter="  ")
     header = 'Epoch: [{}/{}]'.format(epoch, num_epochs)
@@ -42,7 +42,7 @@ def train_for_image_one_epoch(rank, epoch, num_epochs,
         # Model forward passes + compute the loss
         fp16_scaler = None
         with torch.cuda.amp.autocast(fp16_scaler is not None):
-            x = model(rank, images, keep_rate)  # x: logits right after the fc layer
+            x = model(rank, images, keep_rate, random_keep_rate)  # x: logits right after the fc layer
             loss = defined_loss['classification_loss'](x, labels)
 
         if not math.isfinite(loss.item()):
